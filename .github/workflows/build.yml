@@ -1,4 +1,4 @@
-name: Build N4X ProcessOptimizer
+﻿name: Build N4X ProcessOptimizer
 
 on:
   push:
@@ -29,27 +29,19 @@ jobs:
         with:
           arch: x64
 
-      - name: Setup CMake
+      - name: Setup CMake and Ninja
         uses: lukka/get-cmake@latest
 
-      - name: Cache build directory
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.BUILD_DIR }}
-          key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', 'src/**', 'third_party/**') }}
-          restore-keys: |
-            ${{ runner.os }}-cmake-
-
-      - name: Verify ImGui submodule
+      - name: Verify ImGui submodule and deps
         shell: pwsh
         run: |
           if (-not (Test-Path -LiteralPath "third_party/imgui/imgui.cpp")) {
             Write-Host "ImGui submodule missing, cloning fallback..."
+            if (Test-Path -LiteralPath "third_party/imgui") { Remove-Item -Recurse -Force "third_party/imgui" }
             git clone --depth 1 --branch docking https://github.com/ocornut/imgui.git third_party/imgui
           }
           if (-not (Test-Path -LiteralPath "third_party/imgui/backends/imgui_impl_dx11.cpp")) {
-            Write-Host "ImGui DX11 backend missing in submodule"
-            exit 1
+            throw "ImGui DX11 backend missing"
           }
           if (-not (Test-Path -LiteralPath "third_party/json/nlohmann/json.hpp")) {
             New-Item -ItemType Directory -Path "third_party/json/nlohmann" -Force | Out-Null
@@ -59,19 +51,19 @@ jobs:
       - name: Configure
         shell: pwsh
         run: |
-          cmake -B $env:BUILD_DIR -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=$env:CONFIG
+          cmake -S . -B $env:BUILD_DIR -G Ninja -DCMAKE_BUILD_TYPE=$env:CONFIG
 
       - name: Build
         shell: pwsh
         run: |
-          cmake --build $env:BUILD_DIR --config $env:CONFIG --parallel
+          cmake --build $env:BUILD_DIR --parallel
 
       - name: Package artifact
         shell: pwsh
         run: |
           $out = "artifact/N4X-ProcessOptimizer-x64"
           New-Item -ItemType Directory -Path $out -Force | Out-Null
-          $exe = Get-ChildItem -Path "$env:BUILD_DIR" -Recurse -Filter "N4XProcessOptimizer.exe" | Where-Object { $_.FullName -match "Release" } | Select-Object -First 1
+          $exe = Get-ChildItem -Path $env:BUILD_DIR -Recurse -Filter "N4XProcessOptimizer.exe" | Select-Object -First 1
           if (-not $exe) { throw "Built exe not found" }
           Copy-Item $exe.FullName -Destination "$out/N4XProcessOptimizer.exe" -Force
           Copy-Item "config.json" -Destination "$out/config.json" -Force
