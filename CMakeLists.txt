@@ -25,7 +25,6 @@ set(IMGUI_CORE_SOURCES
     ${IMGUI_DIR}/imgui_draw.cpp
     ${IMGUI_DIR}/imgui_tables.cpp
     ${IMGUI_DIR}/imgui_widgets.cpp
-    ${IMGUI_DIR}/imgui_demo.cpp
 )
 
 if(EXISTS ${IMGUI_BACKENDS_DIR}/imgui_impl_win32.cpp)
