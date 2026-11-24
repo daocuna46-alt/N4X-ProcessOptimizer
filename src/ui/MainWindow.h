@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <shellapi.h>
 #include <d3d11.h>
 #include <string>
 #include <atomic>
@@ -62,7 +63,7 @@ private:
     bool isAdmin_ = false;
     std::atomic<bool> restoreHotkeyPressed_{false};
 
-    NOTIFYICONDATAW nid_{};
+    NOTIFYICONDATAW nid_{ sizeof(NOTIFYICONDATAW) };
     bool trayAdded_ = false;
 
     UINT wmTaskbarCreated_ = 0;
