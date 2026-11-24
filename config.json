@@ -1,0 +1,10 @@
+{
+  "watchdog_interval_ms": 3000,
+  "max_working_set_mb": 2048,
+  "reserve_core0": true,
+  "priority_mode": "HIGH",
+  "theme_dark": true,
+  "auto_start": false,
+  "selected_process_names": [],
+  "filter_show_blacklisted": true
+}
