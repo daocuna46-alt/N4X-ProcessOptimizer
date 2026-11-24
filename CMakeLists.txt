@@ -79,13 +79,16 @@ target_link_libraries(N4XProcessOptimizer PRIVATE
 )
 
 if(MSVC)
-    target_link_options(N4XProcessOptimizer PRIVATE /SUBSYSTEM:WINDOWS)
-    # Embed manifest via linker
+    target_link_options(N4XProcessOptimizer PRIVATE /SUBSYSTEM:WINDOWS /MANIFEST:NO)
+    # Embed manifest explicitly to avoid conflicting auto-manifest level
     set_target_properties(N4XProcessOptimizer PROPERTIES
         WIN32_EXECUTABLE TRUE
         OUTPUT_NAME "N4XProcessOptimizer"
     )
-    target_sources(N4XProcessOptimizer PRIVATE resources/app.manifest)
+    add_custom_command(TARGET N4XProcessOptimizer POST_BUILD
+        COMMAND mt.exe -nologo -manifest "${CMAKE_CURRENT_SOURCE_DIR}/resources/app.manifest" -outputresource:"$<TARGET_FILE>;#1"
+        VERBATIM
+    )
 endif()
 
 # Copy runtime files next to exe
