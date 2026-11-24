@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
@@ -177,7 +177,11 @@ void MainWindow::ApplyTheme(bool dark) {
         c[ImGuiCol_HeaderActive] = ImVec4(accent2.x, accent2.y, accent2.z, 0.8f);
         c[ImGuiCol_Tab] = ImVec4(0.16f,0.16f,0.22f,1.0f);
         c[ImGuiCol_TabHovered] = ImVec4(accent.x, accent.y, accent.z, 0.8f);
+#ifdef ImGuiCol_TabSelected
+        c[ImGuiCol_TabSelected] = ImVec4(accent.x, accent.y, accent.z, 1.0f);
+#elif defined(ImGuiCol_TabActive)
         c[ImGuiCol_TabActive] = ImVec4(accent.x, accent.y, accent.z, 1.0f);
+#endif
         c[ImGuiCol_CheckMark] = accent2;
         c[ImGuiCol_SliderGrab] = accent;
         c[ImGuiCol_SliderGrabActive] = accent2;
@@ -199,7 +203,7 @@ void MainWindow::InitTray() {
     nid_.uCallbackMessage = WM_TRAYICON;
     nid_.hIcon = LoadIconW(hInstance_, L"IDI_APP_ICON");
     if (!nid_.hIcon) nid_.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    wcscpy_s(nid_.szTip, L"N4X ProcessOptimizer");
+    wcsncpy_s(nid_.szTip, L"N4X ProcessOptimizer", _TRUNCATE);
     trayAdded_ = Shell_NotifyIconW(NIM_ADD, &nid_) == TRUE;
 }
 
@@ -428,3 +432,4 @@ LRESULT CALLBACK MainWindow::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM 
 }
 
 } // namespace n4x::ui
+
