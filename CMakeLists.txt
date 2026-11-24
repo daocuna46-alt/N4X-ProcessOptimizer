@@ -86,7 +86,7 @@ if(MSVC)
         OUTPUT_NAME "N4XProcessOptimizer"
     )
     add_custom_command(TARGET N4XProcessOptimizer POST_BUILD
-        COMMAND mt.exe -nologo -manifest "${CMAKE_CURRENT_SOURCE_DIR}/resources/app.manifest" -outputresource:"$<TARGET_FILE:N4XProcessOptimizer>;#1"
+        COMMAND mt.exe -nologo -manifest "${CMAKE_CURRENT_SOURCE_DIR}/resources/app.manifest" "-outputresource:$<TARGET_FILE:N4XProcessOptimizer>;#1"
         VERBATIM
     )
 endif()
