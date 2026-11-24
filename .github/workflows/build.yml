@@ -1,0 +1,97 @@
+name: Build N4X ProcessOptimizer
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build (windows-latest, x64)
+    runs-on: windows-latest
+    env:
+      BUILD_DIR: build
+      CONFIG: Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Cache build directory
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BUILD_DIR }}
+          key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', 'src/**', 'third_party/**') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-
+
+      - name: Verify ImGui submodule
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath "third_party/imgui/imgui.cpp")) {
+            Write-Host "ImGui submodule missing, cloning fallback..."
+            git clone --depth 1 --branch docking https://github.com/ocornut/imgui.git third_party/imgui
+          }
+          if (-not (Test-Path -LiteralPath "third_party/imgui/backends/imgui_impl_dx11.cpp")) {
+            Write-Host "ImGui DX11 backend missing in submodule"
+            exit 1
+          }
+          if (-not (Test-Path -LiteralPath "third_party/json/nlohmann/json.hpp")) {
+            New-Item -ItemType Directory -Path "third_party/json/nlohmann" -Force | Out-Null
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp" -OutFile "third_party/json/nlohmann/json.hpp"
+          }
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -B $env:BUILD_DIR -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=$env:CONFIG
+
+      - name: Build
+        shell: pwsh
+        run: |
+          cmake --build $env:BUILD_DIR --config $env:CONFIG --parallel
+
+      - name: Package artifact
+        shell: pwsh
+        run: |
+          $out = "artifact/N4X-ProcessOptimizer-x64"
+          New-Item -ItemType Directory -Path $out -Force | Out-Null
+          $exe = Get-ChildItem -Path "$env:BUILD_DIR" -Recurse -Filter "N4XProcessOptimizer.exe" | Where-Object { $_.FullName -match "Release" } | Select-Object -First 1
+          if (-not $exe) { throw "Built exe not found" }
+          Copy-Item $exe.FullName -Destination "$out/N4XProcessOptimizer.exe" -Force
+          Copy-Item "config.json" -Destination "$out/config.json" -Force
+          Copy-Item "README.md" -Destination "$out/README.md" -Force
+          if (Test-Path "resources/icon.ico") { Copy-Item "resources/icon.ico" -Destination "$out/icon.ico" -Force }
+          Compress-Archive -Path "$out/*" -DestinationPath "N4X-ProcessOptimizer-x64.zip" -Force
+          Write-Host "Packaged: N4X-ProcessOptimizer-x64.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: N4X-ProcessOptimizer-x64
+          path: N4X-ProcessOptimizer-x64.zip
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Create GitHub Release (tag only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: N4X-ProcessOptimizer-x64.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true
