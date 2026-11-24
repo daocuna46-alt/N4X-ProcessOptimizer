@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+﻿cmake_minimum_required(VERSION 3.20)
 project(N4X-ProcessOptimizer VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -7,8 +7,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MSVC)
     add_compile_options(/W4 /EHsc /MP /utf-8 /permissive-)
-    add_compile_options($<$<CONFIG:Release>:/O2 /MT>)
-    add_compile_options($<$<CONFIG:Debug>:/MTd>)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    add_compile_options($<$<CONFIG:Release>:/O2>)
     add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -108,3 +108,4 @@ endif()
 
 install(TARGETS N4XProcessOptimizer RUNTIME DESTINATION .)
 install(FILES config.json README.md DESTINATION .)
+
