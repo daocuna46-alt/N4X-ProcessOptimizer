@@ -31,9 +31,10 @@ bool Config::Load(const std::wstring& path) {
     std::lock_guard<std::mutex> lock(mtx_);
     path_ = path;
     try {
-        std::ifstream f(std::filesystem::path(path));
+        std::filesystem::path p(path);
+        std::ifstream f(p);
         if (!f.is_open()) {
-            Logger::Instance().Warn("Config not found, using defaults: " + std::filesystem::path(path).string());
+            Logger::Instance().Warn("Config not found, using defaults: " + p.string());
             return false;
         }
         json j;
@@ -81,13 +82,14 @@ bool Config::Save(const std::wstring& path) const {
         j["auto_start"] = c.autoStart;
         j["filter_show_blacklisted"] = c.filterShowBlacklisted;
         j["selected_process_names"] = c.selectedProcessNames;
-        std::ofstream f(std::filesystem::path(path));
+        std::filesystem::path p(path);
+        std::ofstream f(p);
         if (!f.is_open()) {
             Logger::Instance().Error("Config save failed: cannot open file");
             return false;
         }
         f << j.dump(2) << std::endl;
-        Logger::Instance().Info("Config saved: " + std::filesystem::path(path).string());
+        Logger::Instance().Info("Config saved: " + p.string());
         return true;
     } catch (const std::exception& e) {
         Logger::Instance().Error(std::string("Config save failed: ") + e.what());
